@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0b0f14;
+  color: #e5e7eb;
+}
+
+/* ---- Thought Tree animations ---- */
+@keyframes tt-reveal-y {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes tt-reveal-x {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes tt-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tt-fade {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* "both" keeps each element hidden until its delay elapses. */
+.tt-line {
+  animation: tt-reveal-y 200ms ease-out both;
+}
+
+.tt-arrow {
+  animation: tt-reveal-x 200ms ease-out both;
+}
+
+.tt-pop {
+  animation: tt-pop 180ms ease-out both;
+}
+
+.tt-fade {
+  animation: tt-fade 250ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .tt-line,
+  .tt-arrow,
+  .tt-pop,
+  .tt-fade {
+    animation-duration: 1ms;
+    animation-delay: 0ms !important;
+  }
+}
+
+/* Dark, thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1f2733 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #1f2733;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #2c3747;
+}
