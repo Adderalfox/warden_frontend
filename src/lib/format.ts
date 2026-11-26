@@ -1,6 +1,7 @@
+// Chart series colours: teal-led, no orange.
 export const PALETTE = [
-  "#3ddc97", "#60a5fa", "#f59e0b", "#a78bfa", "#f472b6",
-  "#22d3ee", "#fb923c", "#84cc16", "#e879f9", "#94a3b8",
+  "#2fbfae", "#5aa9e6", "#e8c547", "#9b8cf0", "#ef5b6b",
+  "#38d6e8", "#7fd66a", "#e07bd0", "#8aa3a8", "#c9d36a",
 ];
 
 export function fmtCpu(m: number | null | undefined): string {
@@ -25,6 +26,13 @@ export function fmtDuration(seconds: number): string {
   if (s < 5400) return `${Math.round(s / 60)}m`;
   if (s < 172800) return `${(s / 3600).toFixed(1)}h`;
   return `${(s / 86400).toFixed(1)}d`;
+}
+
+/** Durations that may be sub-second: 340ms, 4.2s, 3m. */
+export function fmtSeconds(seconds: number): string {
+  if (seconds < 1) return `${Math.round(seconds * 1000)}ms`;
+  if (seconds < 10) return `${seconds.toFixed(1)}s`;
+  return fmtDuration(seconds);
 }
 
 export function fmtAge(createdAtSec: number | null | undefined): string {

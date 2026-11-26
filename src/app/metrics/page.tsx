@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo } from "react";
+import { usePageContext } from "@/components/assistant/assistant-context";
+import { useWorkspace } from "@/components/shell/workspace-context";
+import { Notice } from "@/components/ui/notice";
 import InsightsList from "@/components/metrics/insights-list";
 import { Panel } from "@/components/metrics/panel";
 import PodTable from "@/components/metrics/pod-table";
@@ -11,7 +13,7 @@ import TimeSeriesChart, { colorFor } from "@/components/metrics/time-series-char
 import Toolbar from "@/components/metrics/toolbar";
 import { fmtBytes, fmtCpu, fmtDuration, fmtInt, fmtPct, fmtRate } from "@/lib/format";
 import { usePolling } from "@/hooks/use-polling";
-import { getDashboard, getNamespaces, getServices, getStatus } from "@/lib/metrics-api";
+import { getDashboard, getServices } from "@/lib/metrics-api";
 import { buildRefs, hasAnyData } from "@/lib/refs";
 
 const SYNC = "pods";
@@ -21,10 +23,11 @@ function Dashboard() {
   const pathname = usePathname();
   const params = useSearchParams();
 
-  const namespace = params.get("namespace") ?? "";
+  const ws = useWorkspace();
+  const namespace = ws.namespace;
   const service = params.get("service") ?? "";
-  const range = params.get("range") ?? "1h";
-  const refreshMs = Number(params.get("refresh") ?? 10000);
+  const range = params.get("range") ?? ws.prefs.range;
+  const refreshMs = Number(params.get("refresh") ?? ws.prefs.refreshMs);
 
   const setParam = useCallback(
     (patch: Record<string, string | null>) => {
@@ -35,15 +38,21 @@ function Dashboard() {
     [params, pathname, router]
   );
 
-  // First visit without ?namespace=: pick "demo" in demo mode, otherwise "default".
+  // A deep link such as /metrics?namespace=prod&service=api switches the shared namespace once.
+  const linkedNs = params.get("namespace");
+  const { setNamespace } = ws;
   useEffect(() => {
-    if (namespace) return;
-    getStatus()
-      .then((s) => setParam({ namespace: s.synthetic ? "demo" : "default" }))
-      .catch(() => setParam({ namespace: "default" }));
-  }, [namespace, setParam]);
+    if (linkedNs) {
+      setNamespace(linkedNs);
+      const next = new URLSearchParams(window.location.search);
+      next.delete("namespace");
+      router.replace(`${pathname}${next.toString() ? `?${next}` : ""}`, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedNs]);
 
-  const nsList = usePolling((s) => getNamespaces(s), "namespaces", 60000);
+  usePageContext({ page: "Pod Analytics", namespace, service: service || undefined, range });
+
   const svcList = usePolling((s) => getServices(namespace, s), `services:${namespace}`, 60000, !!namespace);
   const dash = usePolling(
     (s) => getDashboard(namespace, service || null, range, s),
@@ -89,18 +98,16 @@ function Dashboard() {
     d ? buildRefs(d.limits, podNames, key, kind, fmt) : [];
 
   return (
-    <main className="mx-auto max-w-[1600px] px-6 py-6">
+    <div className="mx-auto max-w-[1600px] px-5 pb-10 pt-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/" className="text-sm text-slate-400 hover:text-white">← Incidents</Link>
-          <h1 className="mt-1 text-2xl font-semibold text-white">Pod Analytics</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-white">Pod Analytics</h1>
+          <p className="mt-0.5 text-sm text-slate-500">
             CPU, memory, restarts and health for pods{service ? ` of ${service}` : ""} in <span className="text-slate-300">{namespace || "…"}</span>
             {d && <> · series from <span className="text-slate-300">{d.source.series_source}</span></>}
           </p>
         </div>
         <Toolbar
-          namespace={namespace} namespaces={nsList.data?.namespaces} onNamespace={(v) => setParam({ namespace: v, service: null })}
           service={service} services={svcList.data?.services} onService={(v) => setParam({ service: v || null })}
           range={range} onRange={(v) => setParam({ range: v })}
           refreshMs={refreshMs} onRefreshMs={(v) => setParam({ refresh: String(v) })}
@@ -109,29 +116,25 @@ function Dashboard() {
       </div>
 
       {d?.source.synthetic && (
-        <div className="mt-4 rounded border border-warden-warn/50 bg-warden-warn/10 px-4 py-2 text-sm text-warden-warn">
-          <strong>DEMO DATA</strong> — synthetic pods and metrics (WARDEN_METRICS_SOURCE=demo). Nothing here comes from a real cluster.
-        </div>
+        <Notice tone="demo" className="mt-4">Synthetic pods and metrics (<code className="font-mono">WARDEN_METRICS_SOURCE=demo</code>). Nothing here comes from a real cluster.</Notice>
       )}
       {dash.error && (
-        <div className="mt-4 rounded border border-warden-danger/50 bg-warden-danger/10 px-4 py-3 text-sm text-warden-danger">
-          {d ? "Refresh failed (showing last data): " : "Could not load pod metrics: "}{dash.error}
+        <Notice tone="error" className="mt-4">
+          <div>{d ? "Refresh failed (showing last data): " : "Could not load pod metrics: "}{dash.error}</div>
           {!d && (
-            <div className="mt-1 text-xs text-slate-400">
+            <div className="mt-1 text-xs text-slate-500">
               Point the backend at a cluster (WARDEN_KUBECONFIG_PATH or ~/.kube/config), or set
               WARDEN_METRICS_SOURCE=demo in backend/.env and restart it to explore the dashboard with synthetic data.
             </div>
           )}
-        </div>
+        </Notice>
       )}
-      {d?.source.warning && (
-        <div className="mt-4 rounded border border-warden-warn/40 bg-warden-warn/10 px-4 py-2 text-sm text-warden-warn">{d.source.warning}</div>
-      )}
+      {d?.source.warning && <Notice tone="warn" className="mt-4">{d.source.warning}</Notice>}
       {collecting && (
-        <div className="mt-4 rounded border border-warden-border bg-warden-panel px-4 py-2 text-sm text-slate-400">
+        <Notice className="mt-4">
           Collecting history: {fmtDuration(d!.history.available_seconds)} of the requested {fmtDuration(d!.history.requested_seconds)} is available.
           The collector samples every few seconds; set WARDEN_PROMETHEUS_URL to read longer history from Prometheus.
-        </div>
+        </Notice>
       )}
 
       {!d && !dash.error && <div className="mt-10 text-center text-sm text-slate-500">Loading pod metrics…</div>}
@@ -199,7 +202,7 @@ function Dashboard() {
           </Panel>
         </>
       )}
-    </main>
+    </div>
   );
 }
 

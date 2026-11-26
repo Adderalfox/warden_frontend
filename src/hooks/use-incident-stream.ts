@@ -36,7 +36,7 @@ export function useIncidentStream(incidentId: string) {
     timer = setInterval(poll, 2000);
 
     // 2) Open the stream directly to the backend for instant updates.
-    es = new EventSource(incidentStreamUrl(incidentId));
+    es = new EventSource(incidentStreamUrl(incidentId), { withCredentials: true });
     const handle = (evt: MessageEvent) => {
       try {
         apply(JSON.parse(evt.data) as IncidentState);

@@ -1,3 +1,5 @@
+import { request } from "./http";
+
 export interface AgentLogEntry {
   node: string;
   timestamp: string;
@@ -19,6 +21,7 @@ export interface IncidentState {
   agent_logs: AgentLogEntry[];
   failure_reason: string | null;
   namespace?: string;
+  created_at?: number | null;
 }
 
 // Server Components run fetch() outside a browser, so a relative URL can't
@@ -29,20 +32,18 @@ const BASE = typeof window === "undefined"
   : "/api/backend/v1";
 
 export async function listIncidents(): Promise<IncidentState[]> {
-  const res = await fetch(`${BASE}/incidents`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to list incidents: ${res.status}`);
-  return res.json();
+  return request<IncidentState[]>(`${BASE}/incidents`);
 }
 
 export async function getIncident(id: string): Promise<IncidentState> {
-  const res = await fetch(`${BASE}/incidents/${id}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch incident ${id}: ${res.status}`);
-  return res.json();
+  return request<IncidentState>(`${BASE}/incidents/${id}`);
 }
 
 export function incidentStreamUrl(id: string): string {
   // SSE must bypass the Next.js rewrite proxy, which buffers streams.
-  const direct = process.env.NEXT_PUBLIC_WARDEN_API_URL || "http://localhost:8000";
+  const direct =
+    process.env.NEXT_PUBLIC_WARDEN_API_URL ||
+    (typeof window !== "undefined" ? `http://${window.location.hostname}:8000` : "http://localhost:8000");
   return `${direct}/api/v1/incidents/${id}/stream`;
 }
 
@@ -51,15 +52,11 @@ export async function submitApproval(
   decision: "APPROVE" | "REJECT",
   apiKey: string
 ): Promise<void> {
-  const res = await fetch(`${BASE}/approval/${id}`, {
+  await request<unknown>(`${BASE}/approval/${id}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-    },
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey },
     body: JSON.stringify({ decision }),
   });
-  if (!res.ok) throw new Error(`Approval submission failed: ${res.status}`);
 }
 
 export const STATUS_COLORS: Record<string, string> = {

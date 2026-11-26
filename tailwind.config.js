@@ -8,13 +8,17 @@ module.exports = {
     extend: {
       colors: {
         warden: {
-          bg: "#0b0f14",
-          panel: "#121821",
-          border: "#1f2733",
-          accent: "#3ddc97",
-          danger: "#ef4444",
-          warn: "#f59e0b",
+          bg: "#070c0e",
+          panel: "#0b1215",
+          raised: "#0f191c",
+          border: "#16232a",
+          accent: "#2fbfae",
+          danger: "#ef5b6b",
+          warn: "#e8c547",
         },
+      },
+      boxShadow: {
+        card: "0 1px 0 0 rgba(255,255,255,0.02) inset, 0 8px 24px -12px rgba(0,0,0,0.6)",
       },
     },
   },

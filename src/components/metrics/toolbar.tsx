@@ -8,7 +8,7 @@ export const REFRESH_OPTIONS: { label: string; ms: number }[] = [
   { label: "30s", ms: 30000 }, { label: "1m", ms: 60000 },
 ];
 
-const sel = "rounded border border-warden-border bg-warden-bg px-2 py-1 text-sm text-slate-200 focus:border-warden-accent focus:outline-none";
+const sel = "rounded-lg border border-warden-border bg-warden-panel px-2.5 py-1.5 text-sm text-slate-200 focus:border-warden-accent/60 focus:outline-none";
 
 export function Select({
   label, value, onChange, options,
@@ -67,7 +67,7 @@ export default function Toolbar({
       />
       <button
         onClick={onReload}
-        className="rounded border border-warden-border px-2.5 py-1 text-sm text-slate-300 hover:border-warden-accent hover:text-white"
+        className="rounded-lg border border-warden-border px-3 py-1.5 text-sm text-slate-300 hover:border-warden-accent/50 hover:text-white"
       >
         <span className={loading ? "inline-block animate-spin" : "inline-block"}>⟳</span> Refresh
       </button>

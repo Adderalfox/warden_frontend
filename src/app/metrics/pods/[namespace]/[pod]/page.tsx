@@ -8,12 +8,15 @@ import { EmptyState, Panel } from "@/components/metrics/panel";
 import StatusPill from "@/components/metrics/status-pill";
 import TimeSeriesChart, { colorFor, type RefLine } from "@/components/metrics/time-series-chart";
 import Toolbar from "@/components/metrics/toolbar";
+import { useWorkspace } from "@/components/shell/workspace-context";
 import { usePolling } from "@/hooks/use-polling";
 import {
   fmtAge, fmtAgo, fmtBytes, fmtCpu, fmtDateTime, fmtInt, fmtPct, fmtRate, pctColor,
 } from "@/lib/format";
 import { getPodDetail, getPodEvents, getPodLogs, type PodSnapshot } from "@/lib/metrics-api";
 import { hasAnyData } from "@/lib/refs";
+import { usePageContext } from "@/components/assistant/assistant-context";
+import { Notice } from "@/components/ui/notice";
 
 const SYNC = "pod";
 
@@ -92,8 +95,10 @@ function LogsPanel({ namespace, pod, containers }: { namespace: string; pod: str
 export default function PodDetailPage({ params }: { params: { namespace: string; pod: string } }) {
   const namespace = decodeURIComponent(params.namespace);
   const podName = decodeURIComponent(params.pod);
-  const [range, setRange] = useState("1h");
-  const [refreshMs, setRefreshMs] = useState(10000);
+  const { prefs } = useWorkspace();
+  const [range, setRange] = useState(prefs.range);
+  const [refreshMs, setRefreshMs] = useState(prefs.refreshMs);
+  usePageContext({ page: "Pod Analytics", namespace, pod: podName, range });
 
   const detail = usePolling((s) => getPodDetail(namespace, podName, range, s), `${namespace}/${podName}/${range}`, refreshMs);
   const events = usePolling((s) => getPodEvents(namespace, podName, s), `events:${namespace}/${podName}`, 15000);
@@ -120,7 +125,7 @@ export default function PodDetailPage({ params }: { params: { namespace: string;
   const nameOfC = (n: string) => n;
 
   return (
-    <main className="mx-auto max-w-[1600px] px-6 py-6">
+    <div className="mx-auto max-w-[1600px] px-5 pb-10 pt-2">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
@@ -146,17 +151,9 @@ export default function PodDetailPage({ params }: { params: { namespace: string;
           onReload={detail.reload} loading={detail.loading} updatedAt={detail.updatedAt} />
       </div>
 
-      {d?.source.synthetic && (
-        <div className="mt-4 rounded border border-warden-warn/50 bg-warden-warn/10 px-4 py-2 text-sm text-warden-warn">
-          <strong>DEMO DATA</strong> — synthetic pod and metrics.
-        </div>
-      )}
-      {detail.error && (
-        <div className="mt-4 rounded border border-warden-danger/50 bg-warden-danger/10 px-4 py-3 text-sm text-warden-danger">{detail.error}</div>
-      )}
-      {d?.source.warning && (
-        <div className="mt-4 rounded border border-warden-warn/40 bg-warden-warn/10 px-4 py-2 text-sm text-warden-warn">{d.source.warning}</div>
-      )}
+      {d?.source.synthetic && <Notice tone="demo" className="mt-4">Synthetic pod and metrics. Nothing here comes from a real cluster.</Notice>}
+      {detail.error && <Notice tone="error" className="mt-4">{detail.error}</Notice>}
+      {d?.source.warning && <Notice tone="warn" className="mt-4">{d.source.warning}</Notice>}
       {!d && !detail.error && <div className="mt-10 text-center text-sm text-slate-500">Loading…</div>}
 
       {d && pod && series && cseries && (
@@ -268,6 +265,6 @@ export default function PodDetailPage({ params }: { params: { namespace: string;
           </div>
         </>
       )}
-    </main>
+    </div>
   );
 }

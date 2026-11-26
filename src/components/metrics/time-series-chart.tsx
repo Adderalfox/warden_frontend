@@ -15,8 +15,8 @@ export interface RefLine {
 }
 
 const REF_COLOR: Record<RefLine["kind"], string> = {
-  limit: "#ef4444",
-  request: "#f59e0b",
+  limit: "#ef5b6b",
+  request: "#e8c547",
   threshold: "#94a3b8",
 };
 
@@ -47,6 +47,15 @@ interface TipProps {
   active?: boolean;
   payload?: { dataKey: string; value: number | null; color: string }[];
   label?: number;
+}
+
+/** Y-axis tick drawn as plain text so long labels ("563.2 MiB") never wrap. */
+function YTick({ x, y, payload, fmt }: { x?: number; y?: number; payload?: { value: number }; fmt: (v: number) => string }) {
+  return (
+    <text x={(x ?? 0) - 4} y={y} dy={4} textAnchor="end" fontSize={11} fill="#64818b">
+      {payload ? fmt(payload.value) : ""}
+    </text>
+  );
 }
 
 export default function TimeSeriesChart({
@@ -122,7 +131,7 @@ export default function TimeSeriesChart({
         stackable && hasData ? (
           <button
             onClick={() => setStacked((s) => !s)}
-            className="rounded border border-warden-border px-2 py-0.5 text-[11px] text-slate-400 hover:text-white"
+            className="rounded-md border border-warden-border px-2 py-0.5 text-[11px] text-slate-400 hover:text-white"
           >
             {stacked ? "stacked" : "lines"}
           </button>
@@ -138,15 +147,15 @@ export default function TimeSeriesChart({
           <div style={{ height }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={rows} syncId={syncId} margin={{ top: 6, right: 12, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#1f2733" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="#13202a" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="t" type="number" scale="time" domain={["dataMin", "dataMax"]}
                   tickFormatter={(v: number) => fmtClock(v, spanSeconds < 900)}
-                  stroke="#475569" tick={{ fontSize: 11, fill: "#64748b" }} minTickGap={48}
+                  stroke="#2a3a42" tick={{ fontSize: 11, fill: "#64818b" }} minTickGap={48}
                 />
                 <YAxis
-                  width={64} stroke="#475569" tick={{ fontSize: 11, fill: "#64748b" }}
-                  tickFormatter={(v: number) => format(v)} allowDecimals
+                  width={80} stroke="#2a3a42" tick={<YTick fmt={format} />}
+                  allowDecimals
                   domain={[0, maxY ?? ((dataMax: number) => Math.max(dataMax, refMax) * 1.1 || 1)]}
                 />
                 <Tooltip content={<Tip />} isAnimationActive={false} cursor={{ stroke: "#475569" }} />

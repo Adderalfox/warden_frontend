@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { submitApproval } from "@/lib/api";
 
 export default function ApprovalBar({
@@ -13,6 +13,10 @@ export default function ApprovalBar({
   prUrl: string | null;
 }) {
   const [apiKey, setApiKey] = useState("");
+  // Prefill with the key saved under Settings (kept in this browser only).
+  useEffect(() => {
+    try { setApiKey(localStorage.getItem("warden:approval-key") ?? ""); } catch { /* ignore */ }
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

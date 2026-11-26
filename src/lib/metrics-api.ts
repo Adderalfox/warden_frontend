@@ -140,29 +140,13 @@ export interface MetricsStatus {
   available_ranges: string[];
 }
 
-export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-  }
-}
+export { ApiError } from "./http";
+import { request } from "./http";
 
 // Browser-only module (used from client components): go through the Next.js rewrite.
 const BASE = "/api/backend/v1/metrics";
 
-async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { cache: "no-store", signal });
-  if (!res.ok) {
-    let detail = `${res.status} ${res.statusText}`;
-    try {
-      const body = await res.json();
-      if (body?.detail) detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail);
-    } catch {
-      /* non-JSON error body */
-    }
-    throw new ApiError(res.status, detail);
-  }
-  return res.json() as Promise<T>;
-}
+const get = <T>(path: string, signal?: AbortSignal) => request<T>(`${BASE}${path}`, { signal });
 
 const qs = (o: Record<string, string | number | boolean | null | undefined>) =>
   Object.entries(o)
@@ -181,19 +165,13 @@ export const getPodDetail = (namespace: string, pod: string, range: string, s?: 
 export const getPodEvents = (namespace: string, pod: string, s?: AbortSignal) =>
   get<{ events: PodEvent[] }>(`/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(pod)}/events`, s);
 
-export async function getPodLogs(
+export function getPodLogs(
   namespace: string, pod: string, opts: { container?: string; lines?: number; previous?: boolean }, signal?: AbortSignal
 ): Promise<string> {
-  const res = await fetch(
+  return request<string>(
     `${BASE}/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(pod)}/logs?${qs({
       container: opts.container, lines: opts.lines ?? 200, previous: opts.previous ?? false,
     })}`,
-    { cache: "no-store", signal }
+    { signal, raw: "text" }
   );
-  if (!res.ok) {
-    let detail = `${res.status} ${res.statusText}`;
-    try { detail = (await res.json()).detail ?? detail; } catch { /* ignore */ }
-    throw new ApiError(res.status, String(detail));
-  }
-  return res.text();
 }

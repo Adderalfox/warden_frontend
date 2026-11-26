@@ -9,6 +9,7 @@ import ApprovalBar from "@/components/approval-bar";
 import InsightsList from "@/components/metrics/insights-list";
 import type { Insight } from "@/lib/metrics-api";
 import { STATUS_COLORS } from "@/lib/api";
+import { usePageContext } from "@/components/assistant/assistant-context";
 
 const MIN_W = 200; // just wide enough for the nodes
 const MAX_W = 440; // the full-size layout
@@ -16,6 +17,7 @@ const COMPACT_BELOW = 330; // under this, labels/arrows/hover box fade out
 
 export default function WarRoomPage({ params }: { params: { id: string } }) {
   const { state, connected } = useIncidentStream(params.id);
+  usePageContext({ page: "Incident war room", incident_id: params.id, namespace: state?.namespace, service: state?.service_name });
 
   const podMetrics = state?.git_context?.pod_metrics as { insights?: Insight[] } | undefined;
   const podInsights = podMetrics?.insights ?? null;
@@ -41,11 +43,11 @@ export default function WarRoomPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <main className={`flex h-screen flex-col ${dragging ? "select-none" : ""}`}>
+    <div className={`flex h-[calc(100vh-3.5rem)] flex-col ${dragging ? "select-none" : ""}`}>
       <header className="flex items-center justify-between border-b border-warden-border bg-warden-panel px-4 py-3">
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-sm text-slate-400 hover:text-white">
-            ← Dashboard
+          <Link href="/incidents" className="text-sm text-slate-400 hover:text-white">
+            ← Incidents
           </Link>
           <span className="text-sm font-semibold text-white">{params.id}</span>
           {state && (
@@ -146,6 +148,6 @@ export default function WarRoomPage({ params }: { params: { id: string } }) {
       {state && (
         <ApprovalBar incidentId={params.id} status={state.status} prUrl={state.pr_url} />
       )}
-    </main>
+    </div>
   );
 }

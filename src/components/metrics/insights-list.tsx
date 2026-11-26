@@ -31,18 +31,18 @@ export default function InsightsList({
         <li key={`${i.kind}-${i.pod}-${idx}`} className="flex gap-2">
           <span className={clsx("mt-1.5 h-2 w-2 shrink-0 rounded-full", SEV[i.severity].dot)} />
           <div className="min-w-0">
-            <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className={clsx("text-[10px] font-bold tracking-wider", SEV[i.severity].text)}>{SEV[i.severity].label}</span>
+            <div className="flex items-baseline gap-2">
+              <span className={clsx("shrink-0 text-[10px] font-bold tracking-wider", SEV[i.severity].text)}>{SEV[i.severity].label}</span>
               {namespace && i.pod ? (
                 <Link
                   href={`/metrics/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(i.pod)}`}
-                  className="text-sm text-slate-200 hover:text-warden-accent"
+                  className="min-w-0 text-sm text-slate-200 hover:text-warden-accent"
                   title={i.pod}
                 >
                   {i.title.replace(i.pod, shortPod(i.pod, 34))}
                 </Link>
               ) : (
-                <span className="text-sm text-slate-200">{i.title}</span>
+                <span className="min-w-0 text-sm text-slate-200">{i.title}</span>
               )}
             </div>
             {!compact && <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{i.detail}</p>}
