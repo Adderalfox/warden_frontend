@@ -1,4 +1,5 @@
 import { request } from "./http";
+import { publicBackendUrl } from "./backend-url";
 
 export interface AgentLogEntry {
   node: string;
@@ -41,9 +42,7 @@ export async function getIncident(id: string): Promise<IncidentState> {
 
 export function incidentStreamUrl(id: string): string {
   // SSE must bypass the Next.js rewrite proxy, which buffers streams.
-  const direct =
-    process.env.NEXT_PUBLIC_WARDEN_API_URL ||
-    (typeof window !== "undefined" ? `http://${window.location.hostname}:8000` : "http://localhost:8000");
+  const direct = publicBackendUrl();
   return `${direct}/api/v1/incidents/${id}/stream`;
 }
 

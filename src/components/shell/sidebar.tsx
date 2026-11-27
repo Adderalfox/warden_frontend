@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 import { fmtInt } from "@/lib/format";
+import { publicBackendUrl } from "@/lib/backend-url";
 import { useAuth } from "./auth-context";
 import { IconAlert, IconBook, IconChart, IconCube, IconGrid, IconLogout, IconSliders, IconUser, Logo } from "./icons";
 import { useWorkspace } from "./workspace-context";
@@ -67,7 +68,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const openIncidents = kpis ? kpis.active + kpis.awaiting_approval : 0;
   const critical = overview?.cluster.insights?.filter((i) => i.severity === "critical").length ?? 0;
   const is = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
-  const docs = typeof window !== "undefined" ? `http://${window.location.hostname}:8000/docs` : "#";
+  const docs = `${publicBackendUrl()}/docs`;
 
   return (
     <aside className="flex h-full w-60 flex-col rounded-2xl border border-warden-border bg-warden-panel p-3 shadow-card">
