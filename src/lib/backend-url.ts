@@ -1,5 +1,5 @@
 export function publicBackendUrl(): string {
-  const configured = process.env.CONFIG_WARDEN_API_URL?.trim();
+  const configured = process.env.NEXT_PUBLIC_WARDEN_API_URL?.trim();
   if (configured) return configured.replace(/\/+$/, "");
 
   if (typeof window !== "undefined") {
